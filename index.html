@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>GPS Tracker v1.2.7</title>
-    <meta name="app-version" content="1.2.7" />
+    <title>GPS Tracker v1.2.11</title>
+    <meta name="app-version" content="1.2.11" />
 
     <!-- Fonts: Share Tech Mono for coordinates, Barlow Condensed for labels, DM Sans for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -223,6 +223,11 @@
         display: none;
       }
 
+      #schedule-panel.history-hidden,
+      #save-schedule-countdown.history-hidden {
+        display: none;
+      }
+
       .schedule-header {
         display: flex;
         align-items: center;
@@ -412,7 +417,7 @@
         <div id="schedule-content" class="schedule-empty">Upload a CSV with <strong>UTC Start</strong> and <strong>UTC End</strong> columns. Times repeat daily in UTC and are shown here in your local time.</div>
       </div>
     </section>
-    <div id="app-version">v1.2.7</div>
+    <div id="app-version">v1.2.11</div>
     <div id="survey-marker" aria-hidden="true"></div>
     <script>
       (() => {
@@ -429,6 +434,15 @@
         let fileName = localStorage.getItem(`${STORAGE_KEY}:name`) || "Uploaded CSV";
         let saveCountdown = null;
         const notified = new Set();
+
+        const isHistoryActive = () => Array.from(document.querySelectorAll(".bottom-nav button.active"))
+          .some((button) => button.textContent.trim().toLowerCase().includes("history"));
+
+        const syncHistoryVisibility = () => {
+          const hidden = isHistoryActive();
+          panel.classList.toggle("history-hidden", hidden);
+          if (saveCountdown) saveCountdown.classList.toggle("history-hidden", hidden);
+        };
 
         const parseCsvLine = (line) => {
           const cells = [];
@@ -585,8 +599,7 @@
                 <div class="schedule-row ${item.start <= now.getTime() && item.end > now.getTime() ? "active" : ""}">
                   <div class="schedule-index">#${escapeHtml(item.label)}</div>
                   <div>
-                    <div class="schedule-time">${formatLocalRange(item.start, item.end)}</div>
-                    <div class="schedule-utc">${formatUtcTime(item.startSeconds)} - ${formatUtcTime(item.endSeconds)} UTC</div>
+                    <div class="schedule-time">${formatLocalRange(item.start, item.end)} | ${formatUtcTime(item.startSeconds)} - ${formatUtcTime(item.endSeconds)} UTC</div>
                   </div>
                 </div>
               `).join("")}
@@ -597,6 +610,7 @@
             saveTarget.className = tone;
             saveTarget.innerHTML = `<span class="save-schedule-label">${active ? "Schedule ends in" : "Schedule starts in (actual)"}</span>${formatDuration(countdownMs)}`;
           }
+          syncHistoryVisibility();
           notifyThreshold(next, countdownMs, active);
         };
 
@@ -650,6 +664,7 @@
 
         setInterval(render, 1000);
         new MutationObserver(() => {
+          syncHistoryVisibility();
           if (!saveCountdown || !document.body.contains(saveCountdown)) render();
         }).observe(document.getElementById("root"), { childList: true, subtree: true });
       })();
