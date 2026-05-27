@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>GPS Tracker v1.2.4</title>
-    <meta name="app-version" content="1.2.4" />
+    <title>GPS Tracker v1.2.5</title>
+    <meta name="app-version" content="1.2.5" />
 
     <!-- Fonts: Share Tech Mono for coordinates, Barlow Condensed for labels, DM Sans for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -412,12 +412,13 @@
         <div id="schedule-content" class="schedule-empty">Upload a CSV with <strong>UTC Start</strong> and <strong>UTC End</strong> columns. Times repeat daily in UTC and are shown here in your local time.</div>
       </div>
     </section>
-    <div id="app-version">v1.2.4</div>
+    <div id="app-version">v1.2.5</div>
     <div id="survey-marker" aria-hidden="true"></div>
     <script>
       (() => {
         const STORAGE_KEY = "dailyUtcScheduleCsv";
         const DAY_MS = 86400000;
+        const START_DELAY_MS = 30000;
         const WARNING_MS = 5 * 60 * 1000;
         const URGENT_MS = 2.5 * 60 * 1000;
         const panel = document.getElementById("schedule-panel");
@@ -497,7 +498,7 @@
           const occurrences = [];
           for (let dayOffset = -1; dayOffset <= 2; dayOffset += 1) {
             schedule.forEach((item) => {
-              const start = utcMidnight + dayOffset * DAY_MS + item.startSeconds * 1000;
+              const start = utcMidnight + dayOffset * DAY_MS + item.startSeconds * 1000 + START_DELAY_MS;
               let end = utcMidnight + dayOffset * DAY_MS + item.endSeconds * 1000;
               if (item.endSeconds <= item.startSeconds) end += DAY_MS;
               if (end > now.getTime()) occurrences.push({ ...item, start, end });
@@ -576,7 +577,7 @@
           content.innerHTML = `
             <div class="schedule-meta">${schedule.length} daily UTC windows from ${escapeHtml(fileName)}. Local timezone: ${escapeHtml(Intl.DateTimeFormat().resolvedOptions().timeZone || "local")}</div>
             <div class="schedule-next">
-              <div class="schedule-next-label">${active ? "Active now, ends in" : "Next starts in"}</div>
+              <div class="schedule-next-label">${active ? "Schedule ends in" : "Schedule starts in (actual)"}</div>
               <div class="schedule-countdown ${tone}">${formatDuration(countdownMs)}</div>
             </div>
             <div class="schedule-list">
@@ -594,7 +595,7 @@
           const saveTarget = ensureSaveCountdown();
           if (saveTarget) {
             saveTarget.className = tone;
-            saveTarget.innerHTML = `<span class="save-schedule-label">${active ? "Schedule ends in" : "Schedule starts in"}</span>${formatDuration(countdownMs)}`;
+            saveTarget.innerHTML = `<span class="save-schedule-label">${active ? "Schedule ends in" : "Schedule starts in (actual)"}</span>${formatDuration(countdownMs)}`;
           }
           notifyThreshold(next, countdownMs, active);
         };
