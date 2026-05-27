@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>GPS Tracker v1.2.11</title>
-    <meta name="app-version" content="1.2.11" />
+    <title>GPS Tracker v1.2.12</title>
+    <meta name="app-version" content="1.2.12" />
 
     <!-- Fonts: Share Tech Mono for coordinates, Barlow Condensed for labels, DM Sans for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -243,7 +243,8 @@
       }
 
       .schedule-toggle,
-      .schedule-upload {
+      .schedule-upload,
+      .schedule-clear {
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(255, 255, 255, 0.05);
         color: var(--text);
@@ -269,6 +270,18 @@
       }
 
       .schedule-upload input {
+        display: none;
+      }
+
+      .schedule-clear {
+        width: 100%;
+        margin-top: 8px;
+        color: #fca5a5;
+        border-color: rgba(248, 113, 113, 0.28);
+        background: rgba(248, 113, 113, 0.08);
+      }
+
+      .schedule-clear[hidden] {
         display: none;
       }
 
@@ -414,10 +427,11 @@
           Upload CSV
           <input id="schedule-file" type="file" accept=".csv,text/csv" />
         </label>
+        <button id="schedule-clear" class="schedule-clear" type="button" hidden>Clear Schedule</button>
         <div id="schedule-content" class="schedule-empty">Upload a CSV with <strong>UTC Start</strong> and <strong>UTC End</strong> columns. Times repeat daily in UTC and are shown here in your local time.</div>
       </div>
     </section>
-    <div id="app-version">v1.2.11</div>
+    <div id="app-version">v1.2.12</div>
     <div id="survey-marker" aria-hidden="true"></div>
     <script>
       (() => {
@@ -429,6 +443,7 @@
         const panel = document.getElementById("schedule-panel");
         const toggle = panel.querySelector(".schedule-toggle");
         const fileInput = document.getElementById("schedule-file");
+        const clearButton = document.getElementById("schedule-clear");
         const content = document.getElementById("schedule-content");
         let schedule = [];
         let fileName = localStorage.getItem(`${STORAGE_KEY}:name`) || "Uploaded CSV";
@@ -588,6 +603,7 @@
           const countdownMs = countdownTarget - now.getTime();
           const tone = getTone(countdownMs);
           content.className = "";
+          clearButton.hidden = false;
           content.innerHTML = `
             <div class="schedule-meta">${schedule.length} daily UTC windows from ${escapeHtml(fileName)}. Local timezone: ${escapeHtml(Intl.DateTimeFormat().resolvedOptions().timeZone || "local")}</div>
             <div class="schedule-next">
@@ -633,6 +649,21 @@
           render();
         };
 
+        const clearSchedule = () => {
+          schedule = [];
+          fileName = "Uploaded CSV";
+          notified.clear();
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(`${STORAGE_KEY}:name`);
+          clearButton.hidden = true;
+          content.className = "schedule-empty";
+          content.innerHTML = 'Upload a CSV with <strong>UTC Start</strong> and <strong>UTC End</strong> columns. Times repeat daily in UTC and are shown here in your local time.';
+          if (saveCountdown) {
+            saveCountdown.remove();
+            saveCountdown = null;
+          }
+        };
+
         toggle.addEventListener("click", () => {
           const collapsed = panel.classList.toggle("collapsed");
           toggle.textContent = collapsed ? "Open" : "Close";
@@ -653,6 +684,8 @@
             fileInput.value = "";
           }
         });
+
+        clearButton.addEventListener("click", clearSchedule);
 
         try {
           const saved = localStorage.getItem(STORAGE_KEY);
