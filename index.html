@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>GPS Tracker v1.2.4</title>
+    <meta name="app-version" content="1.2.4" />
+
+    <!-- Fonts: Share Tech Mono for coordinates, Barlow Condensed for labels, DM Sans for body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+    <style>
+      html { padding: 0; }
+      body {
+        padding-top: env(safe-area-inset-top);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
+
+      /* Override Tailwind-injected font families */
+      body, button, input, textarea, select, a, h1, h2, h3, h4, h5, h6 {
+        font-family: "DM Sans", "Work Sans", system-ui, sans-serif !important;
+      }
+
+      .font-mono, code, pre, [class*="font-mono"] {
+        font-family: "Share Tech Mono", "JetBrains Mono", "Fira Code", ui-monospace, monospace !important;
+      }
+
+      #root {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Bottom nav */
+      .bottom-nav-wrap {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        padding: 0.625rem 1.25rem;
+        padding-bottom: calc(0.875rem + env(safe-area-inset-bottom));
+        background: rgba(13, 15, 18, 0.92);
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      /* Topographic accent line */
+      .bottom-nav-wrap::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 10%;
+        right: 10%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(199, 125, 90, 0.3), transparent);
+        border-radius: 1px;
+      }
+
+      .bottom-nav-readme {
+        max-width: 400px;
+        margin: 0 auto 0.4rem auto;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.625rem;
+        font-weight: 700;
+        font-family: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        line-height: 1.3;
+      }
+
+      .bottom-nav {
+        display: flex;
+        justify-content: center;
+        gap: 0.625rem;
+        max-width: 420px;
+        margin: 0 auto;
+      }
+
+      .bottom-nav button {
+        flex: 1;
+        max-width: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        font-size: 0.6875rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        cursor: pointer;
+        min-height: 48px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .bottom-nav button::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+        pointer-events: none;
+        border-radius: inherit;
+      }
+
+      .bottom-nav button.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.15);
+        box-shadow:
+          0 4px 20px var(--primary-glow),
+          0 1px 3px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      .bottom-nav button.inactive {
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-muted);
+        border-color: rgba(255, 255, 255, 0.04);
+      }
+
+      .bottom-nav button.inactive:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+
+      .bottom-nav button.inactive:active,
+      .bottom-nav button.active:active {
+        transform: scale(0.97);
+      }
+
+      /* Version badge */
+      #app-version {
+        position: fixed;
+        right: 12px;
+        bottom: calc(112px + env(safe-area-inset-bottom));
+        z-index: 10000;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(13, 15, 18, 0.7);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        color: #6b6560;
+        font: 700 10px/1.2 "Share Tech Mono", ui-monospace, monospace;
+        letter-spacing: 0.06em;
+        pointer-events: none;
+        opacity: 0.6;
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar { width: 3px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      /* Survey marker decoration */
+      #survey-marker {
+        position: fixed;
+        left: 14px;
+        bottom: calc(110px + env(safe-area-inset-bottom));
+        z-index: 10000;
+        width: 8px;
+        height: 8px;
+        pointer-events: none;
+        opacity: 0.25;
+      }
+      #survey-marker::before,
+      #survey-marker::after {
+        content: "";
+        position: absolute;
+        background: var(--primary);
+      }
+      #survey-marker::before {
+        top: 0;
+        left: 50%;
+        width: 1px;
+        height: 100%;
+        transform: translateX(-50%);
+      }
+      #survey-marker::after {
+        left: 0;
+        top: 50%;
+        width: 100%;
+        height: 1px;
+        transform: translateY(-50%);
+      }
+
+      #schedule-panel {
+        position: fixed;
+        top: calc(14px + env(safe-area-inset-top));
+        right: 14px;
+        z-index: 10001;
+        width: min(380px, calc(100vw - 28px));
+        max-height: calc(100vh - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        overflow: auto;
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(13, 15, 18, 0.88);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+      }
+
+      #schedule-panel.collapsed .schedule-body {
+        display: none;
+      }
+
+      .schedule-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .schedule-title {
+        color: var(--text);
+        font: 900 13px/1.15 "Barlow Condensed", system-ui, sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .schedule-toggle,
+      .schedule-upload {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .schedule-body {
+        margin-top: 12px;
+      }
+
+      .schedule-upload {
+        display: block;
+        text-align: center;
+        cursor: pointer;
+        color: #fff;
+        background: var(--primary);
+        border-color: rgba(255, 255, 255, 0.16);
+      }
+
+      .schedule-upload input {
+        display: none;
+      }
+
+      .schedule-meta,
+      .schedule-empty,
+      .schedule-error {
+        margin-top: 10px;
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .schedule-error {
+        color: #fca5a5;
+      }
+
+      .schedule-next {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(199, 125, 90, 0.28);
+        background: rgba(199, 125, 90, 0.12);
+      }
+
+      .schedule-countdown {
+        color: #fff;
+        font: 700 42px/1 "Share Tech Mono", ui-monospace, monospace;
+        letter-spacing: 0.03em;
+      }
+
+      .schedule-countdown.warning,
+      #save-schedule-countdown.warning {
+        color: #fb923c;
+      }
+
+      .schedule-countdown.urgent,
+      #save-schedule-countdown.urgent {
+        color: #f87171;
+      }
+
+      .schedule-next-label {
+        margin-bottom: 6px;
+        color: var(--primary);
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+
+      .schedule-list {
+        margin-top: 12px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .schedule-row {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .schedule-row.active {
+        border-color: rgba(132, 169, 140, 0.5);
+        background: rgba(132, 169, 140, 0.12);
+      }
+
+      .schedule-index {
+        color: var(--text-muted);
+        font: 700 12px/1.4 "Share Tech Mono", ui-monospace, monospace;
+      }
+
+      .schedule-time {
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .schedule-utc {
+        margin-top: 2px;
+        color: var(--text-muted);
+        font: 700 11px/1.35 "Share Tech Mono", ui-monospace, monospace;
+      }
+
+      #save-schedule-countdown {
+        margin-top: 12px;
+        padding: 14px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(13, 15, 18, 0.7);
+        color: #fff;
+        text-align: center;
+        font: 800 28px/1.1 "Share Tech Mono", ui-monospace, monospace;
+        letter-spacing: 0.04em;
+      }
+
+      .save-schedule-label {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--text-muted);
+        font: 900 11px/1.2 "Barlow Condensed", system-ui, sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 560px) {
+        #schedule-panel {
+          top: auto;
+          right: 10px;
+          left: 10px;
+          bottom: calc(134px + env(safe-area-inset-bottom));
+          width: auto;
+          max-height: 44vh;
+        }
+
+        .schedule-countdown {
+          font-size: 34px;
+        }
+
+        #save-schedule-countdown {
+          font-size: 24px;
+        }
+      }
+    </style>
+
+    <script type="module" crossorigin src="/Location-Tracker/assets/index-C0DZriCl.js"></script>
+    <link rel="stylesheet" crossorigin href="/Location-Tracker/assets/styles.css">
+    <link rel="manifest" href="/Location-Tracker/manifest.webmanifest">
+    <script id="vite-plugin-pwa:register-sw" src="/Location-Tracker/registerSW.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <section id="schedule-panel" class="collapsed" aria-label="Daily UTC schedule">
+      <div class="schedule-header">
+        <div class="schedule-title">Schedule</div>
+        <button class="schedule-toggle" type="button" aria-expanded="false">Open</button>
+      </div>
+      <div class="schedule-body">
+        <label class="schedule-upload">
+          Upload CSV
+          <input id="schedule-file" type="file" accept=".csv,text/csv" />
+        </label>
+        <div id="schedule-content" class="schedule-empty">Upload a CSV with <strong>UTC Start</strong> and <strong>UTC End</strong> columns. Times repeat daily in UTC and are shown here in your local time.</div>
+      </div>
+    </section>
+    <div id="app-version">v1.2.4</div>
+    <div id="survey-marker" aria-hidden="true"></div>
+    <script>
+      (() => {
+        const STORAGE_KEY = "dailyUtcScheduleCsv";
+        const DAY_MS = 86400000;
+        const WARNING_MS = 5 * 60 * 1000;
+        const URGENT_MS = 2.5 * 60 * 1000;
+        const panel = document.getElementById("schedule-panel");
+        const toggle = panel.querySelector(".schedule-toggle");
+        const fileInput = document.getElementById("schedule-file");
+        const content = document.getElementById("schedule-content");
+        let schedule = [];
+        let fileName = localStorage.getItem(`${STORAGE_KEY}:name`) || "Uploaded CSV";
+        let saveCountdown = null;
+        const notified = new Set();
+
+        const parseCsvLine = (line) => {
+          const cells = [];
+          let cell = "";
+          let quoted = false;
+          for (let i = 0; i < line.length; i += 1) {
+            const char = line[i];
+            if (char === '"' && line[i + 1] === '"') {
+              cell += '"';
+              i += 1;
+            } else if (char === '"') {
+              quoted = !quoted;
+            } else if (char === "," && !quoted) {
+              cells.push(cell.trim());
+              cell = "";
+            } else {
+              cell += char;
+            }
+          }
+          cells.push(cell.trim());
+          return cells;
+        };
+
+        const parseTime = (value) => {
+          const match = String(value || "").trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+          if (!match) return null;
+          const hours = Number(match[1]);
+          const minutes = Number(match[2]);
+          const seconds = Number(match[3] || 0);
+          if (hours > 23 || minutes > 59 || seconds > 59) return null;
+          return hours * 3600 + minutes * 60 + seconds;
+        };
+
+        const formatUtcTime = (seconds) => {
+          const hours = Math.floor(seconds / 3600);
+          const minutes = Math.floor((seconds % 3600) / 60);
+          const secs = seconds % 60;
+          return [hours, minutes, secs].map((part) => String(part).padStart(2, "0")).join(":");
+        };
+
+        const parseSchedule = (text) => {
+          const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
+          if (lines.length < 2) throw new Error("CSV has no schedule rows.");
+          const headers = parseCsvLine(lines[0]).map((header) => header.toLowerCase());
+          const startIndex = headers.indexOf("utc start");
+          const endIndex = headers.indexOf("utc end");
+          if (startIndex === -1 || endIndex === -1) {
+            throw new Error("CSV must include UTC Start and UTC End columns.");
+          }
+          const parsed = lines.slice(1).map((line, index) => {
+            const cells = parseCsvLine(line);
+            const startSeconds = parseTime(cells[startIndex]);
+            const endSeconds = parseTime(cells[endIndex]);
+            if (startSeconds === null || endSeconds === null) return null;
+            return {
+              label: cells[0] || String(index + 1),
+              startSeconds,
+              endSeconds
+            };
+          }).filter(Boolean).sort((a, b) => a.startSeconds - b.startSeconds);
+          if (!parsed.length) throw new Error("No valid UTC schedule rows found.");
+          return parsed;
+        };
+
+        const getOccurrences = (now) => {
+          const utcMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+          const occurrences = [];
+          for (let dayOffset = -1; dayOffset <= 2; dayOffset += 1) {
+            schedule.forEach((item) => {
+              const start = utcMidnight + dayOffset * DAY_MS + item.startSeconds * 1000;
+              let end = utcMidnight + dayOffset * DAY_MS + item.endSeconds * 1000;
+              if (item.endSeconds <= item.startSeconds) end += DAY_MS;
+              if (end > now.getTime()) occurrences.push({ ...item, start, end });
+            });
+          }
+          return occurrences.sort((a, b) => a.start - b.start).slice(0, 6);
+        };
+
+        const formatLocalRange = (start, end) => {
+          const formatter = new Intl.DateTimeFormat(undefined, {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+          });
+          return `${formatter.format(new Date(start))} - ${formatter.format(new Date(end))}`;
+        };
+
+        const formatDuration = (ms) => {
+          const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+          return [hours, minutes, seconds].map((part) => String(part).padStart(2, "0")).join(":");
+        };
+
+        const getTone = (ms) => {
+          if (ms <= URGENT_MS) return "urgent";
+          if (ms <= WARNING_MS) return "warning";
+          return "";
+        };
+
+        const ensureSaveCountdown = () => {
+          if (saveCountdown && document.body.contains(saveCountdown)) return saveCountdown;
+          const buttons = Array.from(document.querySelectorAll("button"));
+          const saveButton = buttons.find((button) => button.textContent.trim().toUpperCase().includes("SAVE"));
+          if (!saveButton || !saveButton.parentElement) return null;
+          saveCountdown = document.createElement("div");
+          saveCountdown.id = "save-schedule-countdown";
+          saveButton.insertAdjacentElement("afterend", saveCountdown);
+          return saveCountdown;
+        };
+
+        const requestNotificationPermission = () => {
+          if (!("Notification" in window) || Notification.permission !== "default") return;
+          Notification.requestPermission().catch(() => {});
+        };
+
+        const notifyThreshold = (next, ms, active) => {
+          if (!("Notification" in window) || Notification.permission !== "granted" || active) return;
+          const threshold = ms <= URGENT_MS ? "2.5m" : ms <= WARNING_MS ? "5m" : null;
+          if (!threshold) return;
+          const key = `${next.start}:${threshold}`;
+          if (notified.has(key)) return;
+          notified.add(key);
+          new Notification(`Schedule starts in ${threshold}`, {
+            body: `Window #${next.label}: ${formatUtcTime(next.startSeconds)} - ${formatUtcTime(next.endSeconds)} UTC`,
+            tag: key,
+            renotify: true
+          });
+        };
+
+        const render = () => {
+          if (!schedule.length) return;
+          const now = new Date();
+          const occurrences = getOccurrences(now);
+          const next = occurrences[0];
+          if (!next) return;
+          const active = next.start <= now.getTime() && next.end > now.getTime();
+          const countdownTarget = active ? next.end : next.start;
+          const countdownMs = countdownTarget - now.getTime();
+          const tone = getTone(countdownMs);
+          content.className = "";
+          content.innerHTML = `
+            <div class="schedule-meta">${schedule.length} daily UTC windows from ${escapeHtml(fileName)}. Local timezone: ${escapeHtml(Intl.DateTimeFormat().resolvedOptions().timeZone || "local")}</div>
+            <div class="schedule-next">
+              <div class="schedule-next-label">${active ? "Active now, ends in" : "Next starts in"}</div>
+              <div class="schedule-countdown ${tone}">${formatDuration(countdownMs)}</div>
+            </div>
+            <div class="schedule-list">
+              ${occurrences.map((item) => `
+                <div class="schedule-row ${item.start <= now.getTime() && item.end > now.getTime() ? "active" : ""}">
+                  <div class="schedule-index">#${escapeHtml(item.label)}</div>
+                  <div>
+                    <div class="schedule-time">${formatLocalRange(item.start, item.end)}</div>
+                    <div class="schedule-utc">${formatUtcTime(item.startSeconds)} - ${formatUtcTime(item.endSeconds)} UTC</div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          `;
+          const saveTarget = ensureSaveCountdown();
+          if (saveTarget) {
+            saveTarget.className = tone;
+            saveTarget.innerHTML = `<span class="save-schedule-label">${active ? "Schedule ends in" : "Schedule starts in"}</span>${formatDuration(countdownMs)}`;
+          }
+          notifyThreshold(next, countdownMs, active);
+        };
+
+        const escapeHtml = (value) => String(value).replace(/[&<>"]/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;"
+        }[char]));
+
+        const loadText = (text, name) => {
+          schedule = parseSchedule(text);
+          fileName = name;
+          notified.clear();
+          localStorage.setItem(STORAGE_KEY, text);
+          localStorage.setItem(`${STORAGE_KEY}:name`, name);
+          panel.classList.remove("collapsed");
+          toggle.textContent = "Close";
+          toggle.setAttribute("aria-expanded", "true");
+          render();
+        };
+
+        toggle.addEventListener("click", () => {
+          const collapsed = panel.classList.toggle("collapsed");
+          toggle.textContent = collapsed ? "Open" : "Close";
+          toggle.setAttribute("aria-expanded", String(!collapsed));
+          if (!collapsed) requestNotificationPermission();
+        });
+
+        fileInput.addEventListener("change", async () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) return;
+          try {
+            loadText(await file.text(), file.name);
+            requestNotificationPermission();
+          } catch (error) {
+            content.className = "schedule-error";
+            content.textContent = error.message || "Unable to load schedule CSV.";
+          } finally {
+            fileInput.value = "";
+          }
+        });
+
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) loadText(saved, fileName);
+        } catch (error) {
+          content.className = "schedule-error";
+          content.textContent = error.message || "Unable to restore schedule CSV.";
+        }
+
+        setInterval(render, 1000);
+        new MutationObserver(() => {
+          if (!saveCountdown || !document.body.contains(saveCountdown)) render();
+        }).observe(document.getElementById("root"), { childList: true, subtree: true });
+      })();
+    </script>
+  </body>
+</html>
