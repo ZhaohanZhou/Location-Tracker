@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>GPS Tracker v1.2.19</title>
-    <meta name="app-version" content="1.2.19" />
+    <title>GPS Tracker v1.2.20</title>
+    <meta name="app-version" content="1.2.20" />
 
     <!-- Fonts: Share Tech Mono for coordinates, Barlow Condensed for labels, DM Sans for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -386,6 +386,20 @@
         letter-spacing: 0.04em;
       }
 
+      .grid-cols-\[minmax\(0\,1fr\)_auto\] {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .min-w-0 { min-width: 0; }
+      .text-7xl { font-size: 4.5rem; line-height: 1; }
+      .text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+      .min-h-\[56px\] { min-height: 56px; }
+      .min-h-\[64px\] { min-height: 64px; }
+
+      @media (min-width: 640px) {
+        .sm\:text-8xl { font-size: 6rem; line-height: 1; }
+      }
+
       .save-schedule-label {
         display: block;
         margin-bottom: 4px;
@@ -436,7 +450,7 @@
         <div id="schedule-content" class="schedule-empty">Upload a CSV with <strong>UTC Start</strong> and <strong>UTC End</strong> columns. Times repeat daily in UTC and are shown here in your local time.</div>
       </div>
     </section>
-    <div id="app-version">v1.2.19</div>
+    <div id="app-version">v1.2.20</div>
     <div id="survey-marker" aria-hidden="true"></div>
     <script>
       (() => {
