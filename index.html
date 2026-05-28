@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>GPS Tracker v1.2.25</title>
-    <meta name="app-version" content="1.2.25" />
+    <title>GPS Tracker v1.2.26</title>
+    <meta name="app-version" content="1.2.26" />
 
     <!-- Fonts: Share Tech Mono for coordinates, Barlow Condensed for labels, DM Sans for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -137,6 +137,58 @@
 
       .bottom-nav button.inactive:active,
       .bottom-nav button.active:active {
+        transform: scale(0.97);
+      }
+
+      .control-nav-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        font-size: 0.6875rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .control-nav-button::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+        pointer-events: none;
+        border-radius: inherit;
+      }
+
+      .control-nav-button.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 20px var(--primary-glow), 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      .control-nav-button.inactive {
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-muted);
+        border-color: rgba(255, 255, 255, 0.04);
+      }
+
+      .control-nav-button.danger {
+        background: rgba(217, 93, 78, 0.22);
+        color: #fff;
+        border-color: rgba(248, 113, 113, 0.35);
+        box-shadow: 0 4px 20px var(--danger-glow);
+      }
+
+      .control-nav-button:active {
         transform: scale(0.97);
       }
 
@@ -466,7 +518,7 @@
         <div id="schedule-content" class="schedule-empty">Upload a CSV with <strong>UTC Start</strong> and <strong>UTC End</strong> columns. Times repeat daily in UTC and are shown here in your local time.</div>
       </div>
     </section>
-    <div id="app-version">v1.2.25</div>
+    <div id="app-version">v1.2.26</div>
     <div id="survey-marker" aria-hidden="true"></div>
     <script>
       (() => {
