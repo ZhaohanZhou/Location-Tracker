@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>GPS Tracker v1.2.24</title>
-    <meta name="app-version" content="1.2.24" />
+    <title>GPS Tracker v1.2.25</title>
+    <meta name="app-version" content="1.2.25" />
 
     <!-- Fonts: Share Tech Mono for coordinates, Barlow Condensed for labels, DM Sans for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -409,6 +409,7 @@
       .min-w-\[48px\] { min-width: 48px; }
       .min-h-\[48px\] { min-height: 48px; }
       .min-h-\[56px\] { min-height: 56px; }
+      .min-h-\[58px\] { min-height: 58px; }
       .min-w-\[76px\] { min-width: 76px; }
 
       @media (min-width: 640px) {
@@ -465,7 +466,7 @@
         <div id="schedule-content" class="schedule-empty">Upload a CSV with <strong>UTC Start</strong> and <strong>UTC End</strong> columns. Times repeat daily in UTC and are shown here in your local time.</div>
       </div>
     </section>
-    <div id="app-version">v1.2.24</div>
+    <div id="app-version">v1.2.25</div>
     <div id="survey-marker" aria-hidden="true"></div>
     <script>
       (() => {
@@ -598,12 +599,12 @@
 
         const ensureSaveCountdown = () => {
           if (saveCountdown && document.body.contains(saveCountdown)) return saveCountdown;
-          const buttons = Array.from(document.querySelectorAll("button"));
-          const saveButton = buttons.find((button) => button.textContent.trim().toUpperCase().includes("SAVE"));
-          if (!saveButton || !saveButton.parentElement) return null;
+          const noteField = Array.from(document.querySelectorAll("textarea"))
+            .find((field) => field.placeholder && field.placeholder.toLowerCase().includes("note"));
+          if (!noteField || !noteField.parentElement) return null;
           saveCountdown = document.createElement("div");
           saveCountdown.id = "save-schedule-countdown";
-          saveButton.insertAdjacentElement("afterend", saveCountdown);
+          noteField.insertAdjacentElement("afterend", saveCountdown);
           return saveCountdown;
         };
 
