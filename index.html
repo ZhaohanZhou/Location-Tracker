@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>GPS Tracker v1.2.30</title>
-    <meta name="app-version" content="1.2.30" />
+    <title>GPS Tracker v1.2.31</title>
+    <meta name="app-version" content="1.2.31" />
 
     <!-- Fonts: Share Tech Mono for coordinates, Barlow Condensed for labels, DM Sans for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -520,7 +520,6 @@
         <div id="schedule-content" class="schedule-empty">Upload a CSV with <strong>UTC Start</strong> and <strong>UTC End</strong> columns. Times repeat daily in UTC and are shown here in your local time.</div>
       </div>
     </section>
-    <div id="app-version">v1.2.30</div>
     <div id="survey-marker" aria-hidden="true"></div>
     <script>
       (() => {
@@ -537,7 +536,6 @@
         let schedule = [];
         let fileName = localStorage.getItem(`${STORAGE_KEY}:name`) || "Uploaded CSV";
         let saveCountdown = null;
-        const notified = new Set();
 
         const isHistoryActive = () => Array.from(document.querySelectorAll(".bottom-nav button.active"))
           .some((button) => button.textContent.trim().toLowerCase().includes("history"));
@@ -662,29 +660,6 @@
           return saveCountdown;
         };
 
-        const requestNotificationPermission = () => {
-          if (!("Notification" in window) || Notification.permission !== "default") return;
-          Notification.requestPermission().catch(() => {});
-        };
-
-        const notifyThreshold = (next, ms, active) => {
-          if (active) return;
-          const threshold = ms <= URGENT_MS ? "2.5m" : ms <= WARNING_MS ? "5m" : null;
-          if (!threshold) return;
-          const key = `${next.start}:${threshold}`;
-          if (notified.has(key)) return;
-          notified.add(key);
-          const message = `Schedule starts in ${threshold}: window #${next.label} (${formatUtcTime(next.startSeconds)} - ${formatUtcTime(next.endSeconds)} UTC)`;
-          if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(`Schedule starts in ${threshold}`, {
-              body: `Window #${next.label}: ${formatUtcTime(next.startSeconds)} - ${formatUtcTime(next.endSeconds)} UTC`,
-              tag: key,
-              renotify: true
-            });
-          }
-          alert(message);
-        };
-
         const render = () => {
           if (!schedule.length) return;
           const now = new Date();
@@ -720,7 +695,6 @@
             saveTarget.innerHTML = `<span class="save-schedule-label">${active ? "Schedule ends in" : "Schedule starts in (actual)"}</span>${formatDuration(countdownMs)}`;
           }
           syncHistoryVisibility();
-          notifyThreshold(next, countdownMs, active);
         };
 
         const escapeHtml = (value) => String(value).replace(/[&<>"]/g, (char) => ({
@@ -733,7 +707,6 @@
         const loadText = (text, name) => {
           schedule = parseSchedule(text);
           fileName = name;
-          notified.clear();
           localStorage.setItem(STORAGE_KEY, text);
           localStorage.setItem(`${STORAGE_KEY}:name`, name);
           panel.classList.remove("collapsed");
@@ -745,7 +718,6 @@
         const clearSchedule = () => {
           schedule = [];
           fileName = "Uploaded CSV";
-          notified.clear();
           localStorage.removeItem(STORAGE_KEY);
           localStorage.removeItem(`${STORAGE_KEY}:name`);
           clearButton.hidden = true;
@@ -761,7 +733,6 @@
           const collapsed = panel.classList.toggle("collapsed");
           toggle.textContent = collapsed ? "Open" : "Close";
           toggle.setAttribute("aria-expanded", String(!collapsed));
-          if (!collapsed) requestNotificationPermission();
         });
 
         fileInput.addEventListener("change", async () => {
@@ -769,7 +740,6 @@
           if (!file) return;
           try {
             loadText(await file.text(), file.name);
-            requestNotificationPermission();
           } catch (error) {
             content.className = "schedule-error";
             content.textContent = error.message || "Unable to load schedule CSV.";
